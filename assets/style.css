@@ -60,7 +60,7 @@ body {
   font-variant-numeric: tabular-nums;
 }
 .wrap {
-  max-width: 100rem;
+  max-width: none;
   margin-inline: auto;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
@@ -172,3 +172,15 @@ details .source, details .pad { padding: 0.5rem 0.75rem; }
 /* Rules of thumb and notes legend */
 .rules { margin: 0; padding: 0.25rem 0.75rem 0.25rem 2rem; display: flex; flex-direction: column; gap: 0.4rem; max-width: 80ch; }
 details.legend .pairs { grid-template-columns: max-content minmax(0, 60ch); }
+
+/* Prospect board: text columns wrap so the whole table fits its box;
+   numbers and headings stay on one line. */
+#prospect-table th, #prospect-table td { padding: 0.35rem 0.45rem; }
+#prospect-table td { white-space: normal; overflow-wrap: break-word; }
+#prospect-table td.n, #prospect-table th { white-space: nowrap; }
+#prospect-table td.tags { font-size: 0.85rem; color: var(--muted); min-width: 5.5rem; }
+#prospect-table .tier { white-space: nowrap; }
+
+/* Use the whole screen on wide monitors; keep running text to a readable line. */
+main p, .foot { max-width: 110ch; }
+main .note { max-width: 80ch; }

@@ -16,7 +16,7 @@ export function height(inches) {
   return `${Math.floor(inches / 12)}'${inches % 12}"`;
 }
 
-export const stars = (n) => (n ? '★'.repeat(n) : DASH);
+export const stars = (n) => (n ? `${n}★` : DASH);
 
 // The fields the browser board needs; also written to prospects.json.
 // `key` identifies a prospect for the watchlist. The API's own recruitId is
@@ -150,7 +150,7 @@ function prospectSection(rows) {
   const groups = POSITION_TARGETS.filter((t) => rows.some((r) => r.group === t.group));
   const hasAth = rows.some((r) => r.group === 'ATH');
   const first = rows.slice(0, PAGE_SIZE).map((r) => `<tr>
-  <td></td><td class="n">${esc(r.rank)}</td><td>${esc(r.name)}</td><td>${stars(r.stars)}</td><td>${esc(r.position)}</td>
+  <td></td><td class="n">${esc(r.rank)}</td><td>${esc(r.name)}</td><td class="n">${stars(r.stars)}</td><td>${esc(r.position)}</td>
   <td class="n">${esc(r.positionRank)}</td><td>${esc(r.archetype)}</td><td class="n">${height(r.height)}</td><td class="n">${esc(r.weight)}</td>
   <td>${esc(r.hometown)}, ${esc(r.state)}</td><td class="n">${esc(r.stateRank)}</td><td>${esc(r.pipeline)}</td><td>${fitLabels(r.roles)}</td><td>${flagLabels(r.flags)}</td></tr>`).join('');
   const th = (label, sort, numeric) => `<th${numeric ? ' class="n"' : ''}><button type="button" class="sort" data-sort="${sort}">${label}</button></th>`;
@@ -176,7 +176,7 @@ ${pipelineEditor(rows)}
 </details>
 <p class="muted small">Star a prospect to add him to your watchlist. It is saved in this browser only, so each coach keeps his own.</p>
 ${scroll(`<table id="prospect-table">
-<thead><tr><th><span class="sr">Watch</span></th>${th('Rank', 'rank', true)}<th>Name</th><th>Stars</th><th>Pos</th>${th('Pos rank', 'positionRank', true)}<th>Archetype</th>${th('Ht', 'height', true)}${th('Wt', 'weight', true)}<th>Hometown</th>${th('State rank', 'stateRank', true)}${th('Pipeline', 'pipeTier', false)}<th>Fit</th><th>Notes</th></tr></thead>
+<thead><tr><th><span class="sr">Watch</span></th>${th('Rank', 'rank', true)}<th>Name</th><th class="n">Stars</th><th>Pos</th>${th('Pos rank', 'positionRank', true)}<th>Archetype</th>${th('Ht', 'height', true)}${th('Wt', 'weight', true)}<th>Hometown</th>${th('State rank', 'stateRank', true)}${th('Pipeline', 'pipeTier', false)}<th>Fit</th><th>Notes</th></tr></thead>
 <tbody>${first}</tbody></table>`)}
 <button type="button" id="prospect-more" hidden>Show more</button>`;
 }

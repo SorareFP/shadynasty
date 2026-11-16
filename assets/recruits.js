@@ -153,7 +153,7 @@
       starCell(tr, r);
       cell(tr, r.rank, true);
       cell(tr, r.name);
-      cell(tr, r.stars ? new Array(r.stars + 1).join('★') : '');
+      cell(tr, r.stars ? r.stars + '★' : '', true);
       cell(tr, r.position);
       cell(tr, r.positionRank, true);
       cell(tr, r.archetype);
@@ -175,9 +175,9 @@
         if (roleLabel[k] && labels.indexOf(roleLabel[k]) === -1) labels.push(roleLabel[k]);
       });
       var fit = cell(tr, labels.join(', ') || ' ');
-      fit.className = 'wrap-cell';
+      fit.className = 'tags';
       var notes = cell(tr, (r.flags || []).map(function (k) { return flagLabel[k]; }).filter(Boolean).join(', ') || ' ');
-      notes.className = 'wrap-cell';
+      notes.className = 'tags';
       frag.appendChild(tr);
     });
     tbody.replaceChildren(frag);
