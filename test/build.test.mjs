@@ -140,7 +140,7 @@ test('no page leaks a token and every link is relative', async () => {
     const text = await readFile(join(outDir, f), 'utf8');
     assert.ok(!text.includes('drk_'), `${f} contains a token prefix`);
   }
-  const allowed = /^https:\/\/(dynastyrewired\.com|fonts\.googleapis\.com|fonts\.gstatic\.com)/;
+  const allowed = /^https:\/\/(dynastyrewired\.com|fonts\.googleapis\.com|fonts\.gstatic\.com|www\.youtube\.com)/;
   for (const [name, html] of Object.entries(pages)) {
     for (const m of html.matchAll(/(?:href|src)="([^"]*)"/g)) {
       const url = m[1];
@@ -161,4 +161,25 @@ test('recruiting page has team needs and the upgraded board', async () => {
   assert.equal(rows[0].positionRank, 1);
   assert.equal(rows[0].pipeline, 'Alabama');
   assert.ok(rows[0].key.includes('Eric Brock'));
+});
+
+test('recruiting page has scheme fit and pipeline entry', async () => {
+  const { pages, outDir } = await buildFrom(FIX);
+  const html = pages['recruiting.html'];
+  for (const s of ['id="f-role"', 'Scheme targets', '3-3-5 Tite defense', 'Air Raid offense', 'Nose tackle', 'id="pipeline-editor"', 'My pipelines', 'id="f-mypipe"']) {
+    assert.ok(html.includes(s), `recruiting lacks ${s}`);
+  }
+  const rows = await readJson(join(outDir, 'prospects.json'));
+  assert.ok(Array.isArray(rows[0].roles));
+  const pocket = rows.find((x) => x.position === 'QB' && x.archetype === 'Pocket Passer');
+  if (pocket) assert.deepEqual(pocket.roles, ['raid-qb']);
+});
+
+test('team needs open on the owner team with a picker for the others', async () => {
+  const { pages } = await buildFrom(FIX);
+  const html = pages['recruiting.html'];
+  assert.ok(html.includes('<option value="829161584" selected>Texas</option>'));
+  assert.match(html, /<div class="needs" data-team="829161584">/);
+  assert.match(html, /<div class="needs" data-team="829161493" hidden>/);
+  assert.ok(html.includes('<option value="all">All teams</option>'));
 });

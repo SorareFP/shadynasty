@@ -2,8 +2,13 @@ import { esc, layout, scroll, num, DASH } from '../html.mjs';
 import {
   classRankings, classRankingsLabel, prospects, userTeams, rosterNeeds, positionGroup, POSITION_TARGETS,
 } from '../model.mjs';
+import { SCHEMES, ROLES, rolesFor } from '../schemes.mjs';
 
 export const PAGE_SIZE = 100;
+
+// The site owner's team. Team needs open on this team; a viewer can switch,
+// and the choice is remembered in that viewer's browser.
+export const DEFAULT_TEAM = 'Texas';
 
 export function height(inches) {
   if (!inches) return DASH;
@@ -31,6 +36,7 @@ export function prospectRows(season) {
     hometown: r.hometown ?? '',
     state: r.state ?? '',
     pipeline: r.pipeline ?? '',
+    roles: rolesFor(r),
   }));
 }
 
@@ -59,7 +65,11 @@ function needsTable(team, rows) {
 function needsSection(season) {
   const teams = userTeams(season);
   if (!teams.length) return `<p class="muted">No user teams found. ${DASH}</p>`;
-  return teams.map((t) => `<div class="needs">
+  const chosen = (teams.find((t) => t.name === DEFAULT_TEAM) ?? teams[0]).teamId;
+  const picker = teams.length > 1
+    ? `<label class="team-pick">Team <select id="needs-team">${teams.map((t) => `<option value="${esc(t.teamId)}"${t.teamId === chosen ? ' selected' : ''}>${esc(t.name)}</option>`).join('')}<option value="all">All teams</option></select></label>`
+    : '';
+  return picker + teams.map((t) => `<div class="needs" data-team="${esc(t.teamId)}"${t.teamId === chosen ? '' : ' hidden'}>
   <h3>${esc(t.name)}</h3>
   ${needsTable(t, rosterNeeds(season, t.teamId))}
 </div>`).join('');
@@ -75,6 +85,40 @@ function classTable(rows) {
   <td class="n">${esc(r.five)}</td><td class="n">${esc(r.four)}</td><td class="n">${esc(r.three)}</td><td class="n">${num(r.points, 1)}</td></tr>`).join('')}</tbody></table>`);
 }
 
+const ROLE_BY_KEY = Object.fromEntries(ROLES.map((ro) => [ro.key, ro]));
+const SCHEME_SHORT = { tite: 'Tite', raid: 'Raid', best: '' };
+
+// Short labels such as "Tite Nose, Raid QB, S-tier" for the Fit column.
+export function fitLabels(roles) {
+  const labels = [...new Set((roles ?? []).map((k) => {
+    const ro = ROLE_BY_KEY[k];
+    return ro ? `${SCHEME_SHORT[ro.scheme] ?? ''} ${ro.short}`.trim() : null;
+  }).filter(Boolean))];
+  return labels.length ? esc(labels.join(', ')) : '';
+}
+
+function schemeSection() {
+  return SCHEMES.map((sc, i) => `<details${i === 0 ? ' open' : ''}>
+  <summary>${esc(sc.label)}</summary>
+  ${scroll(`<table>
+<thead><tr><th>Role</th><th>Who to target</th><th></th></tr></thead>
+<tbody>${sc.roles.map((ro) => `<tr><td>${esc(ro.label)}</td><td class="wrap-cell">${esc(ro.want)}</td>
+  <td><button type="button" class="link" data-role="${esc(ro.key)}">Prospects</button></td></tr>`).join('')}</tbody></table>`)}
+  <p class="muted small source">Based on <a href="${sc.source.url}">${esc(sc.source.label)}</a>.</p>
+</details>`).join('');
+}
+
+function pipelineEditor(rows) {
+  const regions = [...new Set(rows.map((r) => r.pipeline).filter(Boolean))].sort();
+  if (!regions.length) return '';
+  return `<details id="pipeline-editor">
+  <summary>My pipelines</summary>
+  <p class="muted small pad">Set your tier for each region as the game shows it on your coach screen (5 is strongest). It is saved in this browser only. The board then shows your tier beside each prospect, and can sort by it or hide everyone else.</p>
+  <div class="pipe-grid">${regions.map((p, i) => `<label>${esc(p)} <select data-pipeline="${esc(p)}" id="pipe-${i}"><option value="0">None</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>`).join('')}</div>
+  <p class="pad"><button type="button" id="pipe-clear">Clear my pipelines</button></p>
+</details>`;
+}
+
 function prospectSection(rows) {
   if (!rows.length) return `<p class="muted">No prospect list captured yet. ${DASH}</p>`;
   const uniq = (field) => [...new Set(rows.map((r) => r[field]).filter(Boolean))].sort();
@@ -84,7 +128,7 @@ function prospectSection(rows) {
   const first = rows.slice(0, PAGE_SIZE).map((r) => `<tr>
   <td></td><td class="n">${esc(r.rank)}</td><td>${esc(r.name)}</td><td>${stars(r.stars)}</td><td>${esc(r.position)}</td>
   <td class="n">${esc(r.positionRank)}</td><td>${esc(r.archetype)}</td><td class="n">${height(r.height)}</td><td class="n">${esc(r.weight)}</td>
-  <td>${esc(r.hometown)}, ${esc(r.state)}</td><td class="n">${esc(r.stateRank)}</td><td>${esc(r.pipeline)}</td></tr>`).join('');
+  <td>${esc(r.hometown)}, ${esc(r.state)}</td><td class="n">${esc(r.stateRank)}</td><td>${esc(r.pipeline)}</td><td>${fitLabels(r.roles)}</td></tr>`).join('');
   const th = (label, sort, numeric) => `<th${numeric ? ' class="n"' : ''}><button type="button" class="sort" data-sort="${sort}">${label}</button></th>`;
   return `<form class="filters" id="prospect-filters">
   <label>Group <select id="f-group"><option value="">All</option>${groups.map((g) => opt(g.group, g.label)).join('')}${hasAth ? opt('ATH', 'Athlete') : ''}</select></label>
@@ -93,14 +137,17 @@ function prospectSection(rows) {
   <label>State <select id="f-state"><option value="">All</option>${uniq('state').map((v) => opt(v)).join('')}</select></label>
   <label>Pipeline <select id="f-pipeline"><option value="">All</option>${uniq('pipeline').map((v) => opt(v)).join('')}</select></label>
   <label>Archetype <select id="f-archetype"><option value="">All</option>${uniq('archetype').map((v) => opt(v)).join('')}</select></label>
+  <label>Scheme fit <select id="f-role"><option value="">Any</option>${SCHEMES.map((sc) => `<optgroup label="${esc(sc.label)}"><option value="scheme:${sc.key}">Any ${esc(sc.label)} role</option>${sc.roles.map((ro) => opt(ro.key, ro.label)).join('')}</optgroup>`).join('')}</select></label>
   <label>Name <input id="f-name" type="search" placeholder="Search" autocomplete="off"></label>
   <label class="check"><input id="f-watch" type="checkbox"> Watchlist only</label>
+  <label class="check"><input id="f-mypipe" type="checkbox"> My pipelines only</label>
   <button type="reset" id="f-reset">Clear filters</button>
 </form>
 <p class="muted small" id="prospect-count">Showing the top ${Math.min(PAGE_SIZE, rows.length)} of ${rows.length} prospects</p>
+${pipelineEditor(rows)}
 <p class="muted small">Star a prospect to add him to your watchlist. It is saved in this browser only, so each coach keeps his own.</p>
 ${scroll(`<table id="prospect-table">
-<thead><tr><th><span class="sr">Watch</span></th>${th('Rank', 'rank', true)}<th>Name</th><th>Stars</th><th>Pos</th>${th('Pos rank', 'positionRank', true)}<th>Archetype</th>${th('Ht', 'height', true)}${th('Wt', 'weight', true)}<th>Hometown</th>${th('State rank', 'stateRank', true)}<th>Pipeline</th></tr></thead>
+<thead><tr><th><span class="sr">Watch</span></th>${th('Rank', 'rank', true)}<th>Name</th><th>Stars</th><th>Pos</th>${th('Pos rank', 'positionRank', true)}<th>Archetype</th>${th('Ht', 'height', true)}${th('Wt', 'weight', true)}<th>Hometown</th>${th('State rank', 'stateRank', true)}${th('Pipeline', 'pipeTier', false)}<th>Fit</th></tr></thead>
 <tbody>${first}</tbody></table>`)}
 <button type="button" id="prospect-more" hidden>Show more</button>`;
 }
@@ -114,6 +161,11 @@ export function render(archive) {
   <h2>Team needs</h2>
   <p class="muted small">Seniors are counted as leaving; early draft entries and transfers are not predicted. "Back" compares returning players with a typical depth for that position, which is this site's own yardstick.</p>
   ${needsSection(season)}
+</section>
+<section>
+  <h2>Scheme targets</h2>
+  <p class="muted small">Which archetypes to chase for each system. "Prospects" filters the board to players who fit that role by position, archetype and size. Ratings and dev traits stay hidden until you scout in the game.</p>
+  ${schemeSection()}
 </section>
 <section>
   <h2>Class rankings <span class="muted small">${label ? esc(label) : ''}</span></h2>

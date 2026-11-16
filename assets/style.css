@@ -159,3 +159,10 @@ button.star { border: 0; background: none; padding: 0 0.25rem; font-size: 1.15re
 button.star.on { color: var(--accent); }
 .filters label.check { flex-direction: row; align-items: center; gap: 0.4rem; align-self: flex-end; padding-bottom: 0.45rem; }
 .filters button { align-self: flex-end; }
+
+/* Scheme targets and pipeline tiers */
+details .source, details .pad { padding: 0.5rem 0.75rem; }
+.pipe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 0.5rem 1rem; padding: 0 0.75rem 0.5rem; }
+.pipe-grid label { display: flex; flex-direction: column; gap: 0.15rem; font-size: 0.85rem; color: var(--muted); }
+.tier { display: inline-block; padding: 0 0.35rem; border: 1px solid var(--accent); border-radius: 2px; color: var(--accent); font-size: 0.75rem; font-weight: 600; }
+.team-pick { display: flex; flex-direction: column; gap: 0.2rem; align-self: flex-start; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }

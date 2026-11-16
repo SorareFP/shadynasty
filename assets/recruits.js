@@ -1,8 +1,31 @@
-// Prospect board: filters, sorting and a per-browser watchlist.
+// Prospect board: filters, sorting, scheme fit, a watchlist and pipeline tiers.
+// The watchlist and pipeline tiers are saved in this browser only.
 // Without this script the page still shows the top prospects rendered into it.
 (function () {
+  // Team needs: show one team at a time, remembering the viewer's choice.
+  (function () {
+    var pick = document.getElementById('needs-team');
+    if (!pick) return;
+    var KEY = 'shadynasty.team';
+    function show() {
+      Array.prototype.forEach.call(document.querySelectorAll('.needs[data-team]'), function (el) {
+        el.hidden = pick.value !== 'all' && el.getAttribute('data-team') !== pick.value;
+      });
+    }
+    try {
+      var saved = localStorage.getItem(KEY);
+      if (saved && pick.querySelector('option[value="' + saved + '"]')) pick.value = saved;
+    } catch (e) { /* keep the default */ }
+    pick.addEventListener('change', function () {
+      try { localStorage.setItem(KEY, pick.value); } catch (e) { /* not remembered */ }
+      show();
+    });
+    show();
+  })();
+
   var PAGE = 100;
-  var STORE = 'shadynasty.watchlist';
+  var WATCH_STORE = 'shadynasty.watchlist';
+  var PIPE_STORE = 'shadynasty.pipelines';
   var table = document.getElementById('prospect-table');
   if (!table) return;
   var tbody = table.tBodies[0];
@@ -10,27 +33,42 @@
   var more = document.getElementById('prospect-more');
   var form = document.getElementById('prospect-filters');
   var f = {};
-  ['group', 'position', 'stars', 'state', 'pipeline', 'archetype', 'name', 'watch'].forEach(function (k) {
+  ['group', 'position', 'stars', 'state', 'pipeline', 'archetype', 'role', 'name', 'watch', 'mypipe'].forEach(function (k) {
     f[k] = document.getElementById('f-' + k);
   });
   var all = [];
   var shown = PAGE;
   var sortKey = 'rank';
   var sortDir = 1;
-  var watch = loadWatch();
+  var watch = new Set(load(WATCH_STORE, []));
+  var tiers = load(PIPE_STORE, {});
 
-  function loadWatch() {
+  // Short labels for the Fit column, read from the scheme filter's own options.
+  var roleLabel = {};
+  Array.prototype.forEach.call(f.role.querySelectorAll('optgroup'), function (group) {
+    var prefix = /Tite/.test(group.label) ? 'Tite ' : /Air Raid/.test(group.label) ? 'Raid ' : '';
+    Array.prototype.forEach.call(group.querySelectorAll('option'), function (o) {
+      if (o.value.indexOf('scheme:') !== 0) roleLabel[o.value] = prefix ? prefix + o.textContent : 'S-tier';
+    });
+  });
+
+  function load(key, fallback) {
     try {
-      return new Set(JSON.parse(localStorage.getItem(STORE) || '[]'));
+      var v = JSON.parse(localStorage.getItem(key));
+      return v === null || typeof v !== 'object' ? fallback : v;
     } catch (e) {
-      return new Set();
+      return fallback;
     }
   }
 
-  function saveWatch() {
+  function save(key, value) {
     try {
-      localStorage.setItem(STORE, JSON.stringify(Array.from(watch)));
-    } catch (e) { /* storage unavailable: the watchlist lasts for this visit only */ }
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (e) { /* storage unavailable: the choice lasts for this visit only */ }
+  }
+
+  function tierOf(r) {
+    return Number(tiers[r.pipeline]) || 0;
   }
 
   function height(inches) {
@@ -42,6 +80,7 @@
     if (numeric) td.className = 'n';
     td.textContent = text === null || text === undefined || text === '' ? '—' : text;
     row.appendChild(td);
+    return td;
   }
 
   function starCell(row, r) {
@@ -55,11 +94,21 @@
     b.setAttribute('aria-label', (on ? 'Remove ' : 'Add ') + r.name + (on ? ' from' : ' to') + ' watchlist');
     b.addEventListener('click', function () {
       if (watch.has(r.key)) watch.delete(r.key); else watch.add(r.key);
-      saveWatch();
+      save(WATCH_STORE, Array.from(watch));
       draw();
     });
     td.appendChild(b);
     row.appendChild(td);
+  }
+
+  function fitsRole(r, value) {
+    if (!value) return true;
+    var roles = r.roles || [];
+    if (value.indexOf('scheme:') === 0) {
+      var prefix = value.slice(7) + '-';
+      return roles.some(function (k) { return k.indexOf(prefix) === 0; });
+    }
+    return roles.indexOf(value) !== -1;
   }
 
   function matches() {
@@ -71,14 +120,16 @@
       if (f.state.value && r.state !== f.state.value) return false;
       if (f.pipeline.value && r.pipeline !== f.pipeline.value) return false;
       if (f.archetype.value && r.archetype !== f.archetype.value) return false;
+      if (!fitsRole(r, f.role.value)) return false;
       if (stars === 5 ? r.stars !== 5 : r.stars < stars) return false;
       if (name && r.name.toLowerCase().indexOf(name) === -1) return false;
       if (f.watch.checked && !watch.has(r.key)) return false;
+      if (f.mypipe.checked && !tierOf(r)) return false;
       return true;
     });
     rows.sort(function (a, b) {
-      var x = a[sortKey];
-      var y = b[sortKey];
+      var x = sortKey === 'pipeTier' ? -tierOf(a) : a[sortKey];
+      var y = sortKey === 'pipeTier' ? -tierOf(b) : b[sortKey];
       if (x === null || x === undefined) return 1;
       if (y === null || y === undefined) return -1;
       return x === y ? (a.rank || 0) - (b.rank || 0) : (x - y) * sortDir;
@@ -103,13 +154,28 @@
       cell(tr, r.weight, true);
       cell(tr, [r.hometown, r.state].filter(Boolean).join(', '));
       cell(tr, r.stateRank, true);
-      cell(tr, r.pipeline);
+      var tier = tierOf(r);
+      var pipe = cell(tr, r.pipeline);
+      if (tier) {
+        var badge = document.createElement('span');
+        badge.className = 'tier';
+        badge.textContent = 'Tier ' + tier;
+        pipe.appendChild(document.createTextNode(' '));
+        pipe.appendChild(badge);
+      }
+      var labels = [];
+      (r.roles || []).forEach(function (k) {
+        if (roleLabel[k] && labels.indexOf(roleLabel[k]) === -1) labels.push(roleLabel[k]);
+      });
+      var fit = cell(tr, labels.join(', ') || ' ');
+      fit.className = 'wrap-cell';
       frag.appendChild(tr);
     });
     tbody.replaceChildren(frag);
-    count.textContent = rows.length
-      ? 'Showing ' + Math.min(shown, rows.length) + ' of ' + rows.length + ' prospects'
-      : (f.watch.checked && !watch.size ? 'Your watchlist is empty. Star a prospect to add him.' : 'No prospects match these filters');
+    var empty = 'No prospects match these filters';
+    if (f.watch.checked && !watch.size) empty = 'Your watchlist is empty. Star a prospect to add him.';
+    else if (f.mypipe.checked && !Object.keys(tiers).length) empty = 'You have not set any pipelines yet. Open "My pipelines" above the table.';
+    count.textContent = rows.length ? 'Showing ' + Math.min(shown, rows.length) + ' of ' + rows.length + ' prospects' : empty;
     more.hidden = rows.length <= shown;
     table.querySelectorAll('button.sort').forEach(function (b) {
       var active = b.getAttribute('data-sort') === sortKey;
@@ -122,11 +188,40 @@
     draw();
   }
 
+  function jumpTo(setFilter) {
+    form.reset();
+    setFilter();
+    reset();
+    document.getElementById('prospects').scrollIntoView();
+  }
+
+  function setupPipelines() {
+    var selects = document.querySelectorAll('select[data-pipeline]');
+    Array.prototype.forEach.call(selects, function (sel) {
+      sel.value = String(Number(tiers[sel.getAttribute('data-pipeline')]) || 0);
+      sel.addEventListener('change', function () {
+        var region = sel.getAttribute('data-pipeline');
+        if (Number(sel.value)) tiers[region] = Number(sel.value); else delete tiers[region];
+        save(PIPE_STORE, tiers);
+        draw();
+      });
+    });
+    var clear = document.getElementById('pipe-clear');
+    if (clear) {
+      clear.addEventListener('click', function () {
+        tiers = {};
+        save(PIPE_STORE, tiers);
+        Array.prototype.forEach.call(selects, function (sel) { sel.value = '0'; });
+        draw();
+      });
+    }
+  }
+
   fetch('prospects.json')
     .then(function (res) { return res.json(); })
     .then(function (data) {
       all = data;
-      ['group', 'position', 'stars', 'state', 'pipeline', 'archetype', 'watch'].forEach(function (k) {
+      ['group', 'position', 'stars', 'state', 'pipeline', 'archetype', 'role', 'watch', 'mypipe'].forEach(function (k) {
         f[k].addEventListener('change', reset);
       });
       f.name.addEventListener('input', reset);
@@ -140,15 +235,17 @@
           reset();
         });
       });
-      // "Prospects" buttons in the team-needs tables jump to the board filtered to that group.
       document.querySelectorAll('button[data-group]').forEach(function (b) {
         b.addEventListener('click', function () {
-          form.reset();
-          f.group.value = b.getAttribute('data-group');
-          reset();
-          document.getElementById('prospects').scrollIntoView();
+          jumpTo(function () { f.group.value = b.getAttribute('data-group'); });
         });
       });
+      document.querySelectorAll('button[data-role]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          jumpTo(function () { f.role.value = b.getAttribute('data-role'); });
+        });
+      });
+      setupPipelines();
       draw();
     })
     .catch(function () { /* keep the rows already on the page */ });
