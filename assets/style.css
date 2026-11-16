@@ -200,3 +200,11 @@ table.compact td.names .small { font-size: 0.8rem; }
 table.compact button.link { text-align: left; white-space: normal; font: inherit; font-weight: 500; }
 .quiet h2 { font-size: 1.15rem; color: var(--muted); }
 .quiet summary { font-size: 0.95rem; }
+
+/* Board actions: watch, remove, commit */
+#prospect-table td.acts { white-space: nowrap; }
+button.drop { border: 1px solid var(--line); background: none; padding: 0 0.35rem; margin-left: 0.15rem; font-size: 1rem; line-height: 1.2; color: var(--muted); border-radius: 2px; }
+button.drop:hover { color: var(--bad); border-color: var(--bad); }
+tr.committed td { background: color-mix(in srgb, var(--good) 14%, var(--surface)); font-weight: 600; }
+tr.committed td:first-child { box-shadow: inset 4px 0 0 var(--good); }
+#prospect-table input[type="checkbox"] { width: 1.1rem; height: 1.1rem; padding: 0; accent-color: var(--good); }

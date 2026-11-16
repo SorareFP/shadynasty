@@ -53,6 +53,7 @@ function needsTable(team, rows) {
     return `<tr>
   <td><button type="button" class="link" data-group="${esc(r.group)}" title="Show ${esc(r.label.toLowerCase())} prospects on the board">${esc(r.label)}</button></td>
   <td class="names">${leaving}</td>
+  <td class="n" data-commits="${esc(r.group)}">0</td>
   <td class="n">${esc(r.returning)}${r.target ? ` <span class="muted">/ ${esc(r.target)}</span>` : ''}</td>
   <td class="n">${esc(r.bestReturning)}</td>
   <td><span class="need need-${r.need}">${NEED_LABEL[r.need]}</span></td>
@@ -64,7 +65,7 @@ function needsTable(team, rows) {
     ? `<p class="note"><strong>Save ${total} spot${total === 1 ? '' : 's'} for the transfer portal:</strong> ${portal.map((r) => `${esc(r.portalSpots)} at ${esc(r.label.toLowerCase())} (${esc(r.topLeaving)} starter-level senior${r.topLeaving === 1 ? '' : 's'} leaving, ${esc(r.readyReturning)} of ${esc(r.starters)} starting spot${r.starters === 1 ? '' : 's'} covered)`).join('; ')}. A high school signee is unlikely to start there next season.</p>`
     : '';
   return advice + scroll(`<table class="compact">
-<thead><tr><th>Position</th><th>Leaving</th><th class="n">Back</th><th class="n">Best</th><th>Need</th><th>Portal</th></tr></thead>
+<thead><tr><th>Position</th><th>Leaving</th><th class="n" title="Prospects you have ticked as committed">In</th><th class="n">Back</th><th class="n">Best</th><th>Need</th><th>Portal</th></tr></thead>
 <tbody>${body}</tbody></table>`);
 }
 
@@ -147,7 +148,7 @@ function prospectSection(rows) {
   const groups = POSITION_TARGETS.filter((t) => rows.some((r) => r.group === t.group));
   const hasAth = rows.some((r) => r.group === 'ATH');
   const first = rows.slice(0, PAGE_SIZE).map((r) => `<tr>
-  <td></td><td class="n">${esc(r.rank)}</td><td>${esc(r.name)}</td><td class="n">${stars(r.stars)}</td><td>${esc(r.position)}</td>
+  <td></td><td></td><td class="n">${esc(r.rank)}</td><td>${esc(r.name)}</td><td class="n">${stars(r.stars)}</td><td>${esc(r.position)}</td>
   <td class="n">${esc(r.positionRank)}</td><td>${esc(r.archetype)}</td><td class="n">${height(r.height)}</td><td class="n">${esc(r.weight)}</td>
   <td>${esc(r.hometown)}, ${esc(r.state)}</td><td class="n">${esc(r.stateRank)}</td><td>${esc(r.pipeline)}</td><td>${fitLabels(r.roles)}</td><td>${flagLabels(r.flags)}</td></tr>`).join('');
   const th = (label, sort, numeric) => `<th${numeric ? ' class="n"' : ''}><button type="button" class="sort" data-sort="${sort}">${label}</button></th>`;
@@ -163,6 +164,8 @@ function prospectSection(rows) {
   <label>Name <input id="f-name" type="search" placeholder="Search" autocomplete="off"></label>
   <label class="check"><input id="f-watch" type="checkbox"> Watchlist only</label>
   <label class="check"><input id="f-mypipe" type="checkbox"> My pipelines only</label>
+  <label class="check"><input id="f-commit" type="checkbox"> My commits only <span id="commit-count"></span></label>
+  <label class="check"><input id="f-removed" type="checkbox"> Show removed <span id="removed-count"></span></label>
   <button type="reset" id="f-reset">Clear filters</button>
 </form>
 <p class="muted small" id="prospect-count">Showing the top ${Math.min(PAGE_SIZE, rows.length)} of ${rows.length} prospects</p>
@@ -171,9 +174,10 @@ ${pipelineEditor(rows)}
   <summary>What the notes mean</summary>
   <dl class="pairs pad">${FLAGS.map((fl) => `<dt>${esc(fl.label)}</dt><dd>${esc(fl.detail)}</dd>`).join('')}</dl>
 </details>
-<p class="muted small">Star a prospect to add him to your watchlist. It is saved in this browser only, so each coach keeps his own.</p>
+<p class="muted small">Star a prospect to add him to your watchlist, press − to take him off your board, and tick Commit when he commits to you. All three are saved in this browser only, so each coach keeps his own. Tick "Show removed" to see the players you took off and put any of them back.</p>
+<p><button type="button" id="restore-all" hidden>Put all removed players back</button></p>
 ${scroll(`<table id="prospect-table">
-<thead><tr><th><span class="sr">Watch</span></th>${th('Rank', 'rank', true)}<th>Name</th><th class="n">Stars</th><th>Pos</th>${th('Pos rank', 'positionRank', true)}<th>Archetype</th>${th('Ht', 'height', true)}${th('Wt', 'weight', true)}<th>Hometown</th>${th('State rank', 'stateRank', true)}${th('Pipeline', 'pipeTier', false)}<th>Fit</th><th>Notes</th></tr></thead>
+<thead><tr><th><span class="sr">Watch and remove</span></th><th>Commit</th>${th('Rank', 'rank', true)}<th>Name</th><th class="n">Stars</th><th>Pos</th>${th('Pos rank', 'positionRank', true)}<th>Archetype</th>${th('Ht', 'height', true)}${th('Wt', 'weight', true)}<th>Hometown</th>${th('State rank', 'stateRank', true)}${th('Pipeline', 'pipeTier', false)}<th>Fit</th><th>Notes</th></tr></thead>
 <tbody>${first}</tbody></table>`)}
 <button type="button" id="prospect-more" hidden>Show more</button>`;
 }
@@ -203,7 +207,7 @@ export function render(archive) {
 <section>
   <h2>Team needs</h2>
   ${needsSection(season)}
-  <p class="muted small">Click a position to see its prospects. Seniors count as leaving; early draft entries and transfers are not predicted. "Back" is returning players against a typical depth, and "Best" is the top returner's overall; both yardsticks are this site's own. A portal spot is suggested where a senior rated 88 or better leaves and no returner rated 84 or better can take the job.</p>
+  <p class="muted small">Click a position to see its prospects. "In" counts the prospects you have ticked as committed on the board. Seniors count as leaving; early draft entries and transfers are not predicted. "Back" is returning players against a typical depth, and "Best" is the top returner's overall; both yardsticks are this site's own. A portal spot is suggested where a senior rated 88 or better leaves and no returner rated 84 or better can take the job.</p>
 </section>
 <section>
   <h2>Scheme targets</h2>
