@@ -184,3 +184,19 @@ details.legend .pairs { grid-template-columns: max-content minmax(0, 60ch); }
 /* Use the whole screen on wide monitors; keep running text to a readable line. */
 main p, .foot { max-width: 110ch; }
 main .note { max-width: 80ch; }
+
+/* Recruiting hub: board on the left, needs and scheme targets in a side column
+   on wide screens; one column, side panel first, on narrower ones. */
+.hub { display: flex; flex-direction: column; gap: 2rem; }
+.hub-main, .hub-side { display: flex; flex-direction: column; gap: 2rem; min-width: 0; }
+.hub-side { order: -1; }
+@media (min-width: 110rem) {
+  .hub { display: grid; grid-template-columns: minmax(0, 1fr) minmax(26rem, 34rem); align-items: start; gap: 2rem; }
+  .hub-side { order: 0; }
+}
+table.compact th, table.compact td { padding: 0.35rem 0.5rem; }
+table.compact td.names { white-space: normal; font-size: 0.9rem; }
+table.compact td.names .small { font-size: 0.8rem; }
+table.compact button.link { text-align: left; white-space: normal; font: inherit; font-weight: 500; }
+.quiet h2 { font-size: 1.15rem; color: var(--muted); }
+.quiet summary { font-size: 0.95rem; }

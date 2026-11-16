@@ -51,22 +51,20 @@ function needsTable(team, rows) {
       ? `${esc(r.leaving)} <span class="muted small">(${r.leavingPlayers.slice(0, 3).map((p) => `${esc(p.name)} ${esc(p.overall)}`).join(', ')}${r.leaving > 3 ? ', …' : ''})</span>`
       : '0';
     return `<tr>
-  <td>${esc(r.label)}</td>
-  <td class="n">${esc(r.total)}</td>
-  <td class="wrap-cell">${leaving}</td>
+  <td><button type="button" class="link" data-group="${esc(r.group)}" title="Show ${esc(r.label.toLowerCase())} prospects on the board">${esc(r.label)}</button></td>
+  <td class="names">${leaving}</td>
   <td class="n">${esc(r.returning)}${r.target ? ` <span class="muted">/ ${esc(r.target)}</span>` : ''}</td>
   <td class="n">${esc(r.bestReturning)}</td>
   <td><span class="need need-${r.need}">${NEED_LABEL[r.need]}</span></td>
-  <td>${r.portalSpots ? `<span class="need need-portal">Save ${esc(r.portalSpots)}</span>` : ''}</td>
-  <td><button type="button" class="link" data-group="${esc(r.group)}">Prospects</button></td></tr>`;
+  <td>${r.portalSpots ? `<span class="need need-portal">Save ${esc(r.portalSpots)}</span>` : ''}</td></tr>`;
   }).join('');
   const portal = rows.filter((r) => r.portalSpots);
   const total = portal.reduce((n, r) => n + r.portalSpots, 0);
   const advice = portal.length
     ? `<p class="note"><strong>Save ${total} spot${total === 1 ? '' : 's'} for the transfer portal:</strong> ${portal.map((r) => `${esc(r.portalSpots)} at ${esc(r.label.toLowerCase())} (${esc(r.topLeaving)} starter-level senior${r.topLeaving === 1 ? '' : 's'} leaving, ${esc(r.readyReturning)} of ${esc(r.starters)} starting spot${r.starters === 1 ? '' : 's'} covered)`).join('; ')}. A high school signee is unlikely to start there next season.</p>`
     : '';
-  return advice + scroll(`<table>
-<thead><tr><th>Position</th><th class="n">Now</th><th>Leaving</th><th class="n">Back</th><th class="n">Best back</th><th>Need</th><th>Portal</th><th></th></tr></thead>
+  return advice + scroll(`<table class="compact">
+<thead><tr><th>Position</th><th>Leaving</th><th class="n">Back</th><th class="n">Best</th><th>Need</th><th>Portal</th></tr></thead>
 <tbody>${body}</tbody></table>`);
 }
 
@@ -113,7 +111,7 @@ export function flagLabels(flags) {
 }
 
 function rulesSection() {
-  return RULES.map((rule, i) => `<details${i === 0 ? ' open' : ''}>
+  return RULES.map((rule) => `<details>
   <summary>${esc(rule.title)}</summary>
   <ul class="rules">${rule.points.map((p) => `<li>${esc(p)}</li>`).join('')}</ul>
   <p class="muted small source">Based on <a href="${rule.source.url}">${esc(rule.source.label)}</a>.</p>
@@ -123,10 +121,9 @@ function rulesSection() {
 function schemeSection() {
   return SCHEMES.map((sc, i) => `<details${i === 0 ? ' open' : ''}>
   <summary>${esc(sc.label)}</summary>
-  ${scroll(`<table>
-<thead><tr><th>Role</th><th>Who to target</th><th></th></tr></thead>
-<tbody>${sc.roles.map((ro) => `<tr><td>${esc(ro.label)}</td><td class="wrap-cell">${esc(ro.want)}</td>
-  <td><button type="button" class="link" data-role="${esc(ro.key)}">Prospects</button></td></tr>`).join('')}</tbody></table>`)}
+  ${scroll(`<table class="compact">
+<thead><tr><th>Role</th><th>Who to target</th></tr></thead>
+<tbody>${sc.roles.map((ro) => `<tr><td class="names"><button type="button" class="link" data-role="${esc(ro.key)}" title="Show prospects who fit this role on the board">${esc(ro.label)}</button></td><td class="names">${esc(ro.want)}</td></tr>`).join('')}</tbody></table>`)}
   ${sc.note ? `<p class="muted small pad">${esc(sc.note)}</p>` : ''}
   <p class="muted small source">Based on <a href="${sc.source.url}">${esc(sc.source.label)}</a>.</p>
 </details>`).join('');
@@ -186,28 +183,34 @@ export function render(archive) {
   const label = classRankingsLabel(season);
   const body = `<h1>Recruiting</h1>
 <p class="note">The game shares class rankings and the prospect pool, but not ratings or dev traits for unsigned prospects, each coach's board, or where a prospect has committed.</p>
-<section>
-  <h2>Team needs</h2>
-  <p class="muted small">Seniors are counted as leaving; early draft entries and transfers are not predicted. "Back" compares returning players with a typical depth for that position, which is this site's own yardstick. A portal spot is suggested where a senior rated 88 or better leaves and no returning player rated 84 or better is there to take the starting job.</p>
-  ${needsSection(season)}
-</section>
-<section>
-  <h2>Scheme targets</h2>
-  <p class="muted small">Which archetypes to chase for each system. "Prospects" filters the board to players who fit that role by position, archetype and size. Ratings and dev traits stay hidden until you scout in the game.</p>
-  ${schemeSection()}
-</section>
-<section>
-  <h2>Recruiting rules of thumb</h2>
-  <p class="muted small">Findings from Dominate CFB Dynasty's testing, in short. The odds are theirs.</p>
-  ${rulesSection()}
+<div class="hub">
+<div class="hub-main">
+<section id="prospects">
+  <h2>Prospects</h2>
+  ${prospectSection(prospectRows(season))}
 </section>
 <section>
   <h2>Class rankings <span class="muted small">${label ? esc(label) : ''}</span></h2>
   ${classTable(classRankings(season))}
 </section>
-<section id="prospects">
-  <h2>Prospects</h2>
-  ${prospectSection(prospectRows(season))}
-</section>`;
+<section class="quiet">
+  <h2>Recruiting rules of thumb</h2>
+  <p class="muted small">Background for the Fit and Notes columns: findings from Dominate CFB Dynasty's testing, in short. The odds are theirs.</p>
+  ${rulesSection()}
+</section>
+</div>
+<aside class="hub-side" aria-label="Team needs and scheme targets">
+<section>
+  <h2>Team needs</h2>
+  ${needsSection(season)}
+  <p class="muted small">Click a position to see its prospects. Seniors count as leaving; early draft entries and transfers are not predicted. "Back" is returning players against a typical depth, and "Best" is the top returner's overall; both yardsticks are this site's own. A portal spot is suggested where a senior rated 88 or better leaves and no returner rated 84 or better can take the job.</p>
+</section>
+<section>
+  <h2>Scheme targets</h2>
+  ${schemeSection()}
+  <p class="muted small">Click a role to see who fits it by position, archetype and size. Ratings and dev traits stay hidden until you scout in the game.</p>
+</section>
+</aside>
+</div>`;
   return layout({ archive, active: 'recruiting', title: 'Recruiting', body, scripts: '<script src="recruits.js" defer></script>' });
 }
