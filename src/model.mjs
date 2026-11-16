@@ -224,3 +224,71 @@ export function recordBook(archive) {
   }
   return { singleGame, season };
 }
+
+// --- Recruiting needs -------------------------------------------------------
+
+// Typical depth for an 85-man roster. These targets are this site's own
+// assumption, used only to grade how thin a position group will be.
+export const POSITION_TARGETS = [
+  { group: 'QB', label: 'Quarterback', target: 4 },
+  { group: 'HB', label: 'Running back', target: 5 },
+  { group: 'WR', label: 'Wide receiver', target: 10 },
+  { group: 'TE', label: 'Tight end', target: 4 },
+  { group: 'OL', label: 'Offensive line', target: 15 },
+  { group: 'DL', label: 'Defensive line', target: 12 },
+  { group: 'LB', label: 'Linebacker', target: 9 },
+  { group: 'CB', label: 'Cornerback', target: 8 },
+  { group: 'S', label: 'Safety', target: 6 },
+  { group: 'K', label: 'Kicker', target: 1 },
+  { group: 'P', label: 'Punter', target: 1 },
+];
+
+const GROUP_OF = {
+  FB: 'HB',
+  LT: 'OL', LG: 'OL', C: 'OL', RG: 'OL', RT: 'OL',
+  LEDG: 'DL', REDG: 'DL', DT: 'DL', LE: 'DL', RE: 'DL', EDGE: 'DL',
+  MIKE: 'LB', WILL: 'LB', SAM: 'LB', MLB: 'LB', LOLB: 'LB', ROLB: 'LB',
+  FS: 'S', SS: 'S',
+};
+
+// Maps a detailed position (as recruits carry) onto the roster's position groups.
+export function positionGroup(position) {
+  return GROUP_OF[position] ?? position ?? '';
+}
+
+const isSenior = (player) => String(player.year ?? '').startsWith('SR');
+
+export function rosterNeeds(season, teamId) {
+  const players = season?.rosters?.[teamId]?.players;
+  if (!players?.length) return [];
+  const byGroup = new Map();
+  for (const p of players) {
+    const g = positionGroup(p.position);
+    if (!byGroup.has(g)) byGroup.set(g, []);
+    byGroup.get(g).push(p);
+  }
+  const known = new Set(POSITION_TARGETS.map((t) => t.group));
+  const defs = [
+    ...POSITION_TARGETS,
+    ...[...byGroup.keys()].filter((g) => !known.has(g)).map((g) => ({ group: g, label: g, target: 0 })),
+  ];
+  return defs.map(({ group, label, target }) => {
+    const all = byGroup.get(group) ?? [];
+    const byOverall = (a, b) => (b.overall ?? 0) - (a.overall ?? 0);
+    const leavingPlayers = all.filter(isSenior).sort(byOverall)
+      .map((p) => ({ name: p.name, year: p.year, overall: p.overall ?? null }));
+    const staying = all.filter((p) => !isSenior(p)).sort(byOverall);
+    const returning = staying.length;
+    return {
+      group,
+      label,
+      target,
+      total: all.length,
+      leaving: leavingPlayers.length,
+      leavingPlayers,
+      returning,
+      bestReturning: staying[0]?.overall ?? null,
+      need: returning < target * 0.7 ? 'high' : returning < target ? 'some' : 'set',
+    };
+  });
+}

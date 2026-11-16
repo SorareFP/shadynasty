@@ -164,3 +164,50 @@ test('loadArchive keeps two seasons and follows league.json for current', async 
   assert.equal(a.current, 2038);
   assert.ok(a.seasons[2037].schedule && a.seasons[2038].schedule);
 });
+
+test('rosterNeeds counts who leaves and grades the need per position group', () => {
+  const mk = (position, year, overall, name = `${position}-${year}-${overall}`) => ({ name, position, year, overall });
+  const s = {
+    rosters: {
+      t1: {
+        players: [
+          mk('QB', 'SR', 95), mk('QB', 'SR (RS)', 80), mk('QB', 'FR', 70),
+          mk('HB', 'JR', 90), mk('HB', 'SO', 85), mk('HB', 'FR (RS)', 80), mk('HB', 'FR', 75), mk('HB', 'SO', 70),
+          mk('K', 'SR', 88),
+        ],
+      },
+    },
+  };
+  const rows = m.rosterNeeds(s, 't1');
+  const by = Object.fromEntries(rows.map((r) => [r.group, r]));
+  assert.deepEqual(
+    { total: by.QB.total, leaving: by.QB.leaving, returning: by.QB.returning, bestReturning: by.QB.bestReturning, need: by.QB.need },
+    { total: 3, leaving: 2, returning: 1, bestReturning: 70, need: 'high' },
+  );
+  assert.deepEqual(by.QB.leavingPlayers.map((p) => p.overall), [95, 80]);
+  assert.equal(by.HB.need, 'set');
+  assert.equal(by.HB.leaving, 0);
+  assert.equal(by.K.returning, 0);
+  assert.equal(by.K.bestReturning, null);
+  assert.equal(by.K.need, 'high');
+  assert.equal(by.WR.total, 0);
+  assert.deepEqual(rows.map((r) => r.group), ['QB', 'HB', 'WR', 'TE', 'OL', 'DL', 'LB', 'CB', 'S', 'K', 'P']);
+  assert.deepEqual(m.rosterNeeds({ rosters: {} }, 't1'), []);
+});
+
+test('positionGroup maps recruit positions onto roster groups', () => {
+  assert.equal(m.positionGroup('LEDG'), 'DL');
+  assert.equal(m.positionGroup('DT'), 'DL');
+  assert.equal(m.positionGroup('MIKE'), 'LB');
+  assert.equal(m.positionGroup('RT'), 'OL');
+  assert.equal(m.positionGroup('C'), 'OL');
+  assert.equal(m.positionGroup('FS'), 'S');
+  assert.equal(m.positionGroup('FB'), 'HB');
+  assert.equal(m.positionGroup('ATH'), 'ATH');
+  assert.equal(m.positionGroup('QB'), 'QB');
+});
+
+test('rosterNeeds works on the real roster fixture', () => {
+  const rows = m.rosterNeeds(season, TEXAS);
+  assert.equal(rows.reduce((n, r) => n + r.total, 0), season.rosters[TEXAS].players.length);
+});

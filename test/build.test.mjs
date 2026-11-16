@@ -149,3 +149,16 @@ test('no page leaks a token and every link is relative', async () => {
     }
   }
 });
+
+test('recruiting page has team needs and the upgraded board', async () => {
+  const { pages, outDir } = await buildFrom(FIX);
+  const html = pages['recruiting.html'];
+  for (const s of ['Team needs', 'Clemson', 'Texas', 'Leaving', 'id="f-pipeline"', 'id="f-archetype"', 'id="f-group"', 'id="f-watch"', 'Pos rank']) {
+    assert.ok(html.includes(s), `recruiting lacks ${s}`);
+  }
+  const rows = await readJson(join(outDir, 'prospects.json'));
+  assert.equal(rows[0].group, 'DL');
+  assert.equal(rows[0].positionRank, 1);
+  assert.equal(rows[0].pipeline, 'Alabama');
+  assert.ok(rows[0].key.includes('Eric Brock'));
+});
