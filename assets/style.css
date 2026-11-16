@@ -208,3 +208,8 @@ button.drop:hover { color: var(--bad); border-color: var(--bad); }
 tr.committed td { background: color-mix(in srgb, var(--good) 14%, var(--surface)); font-weight: 600; }
 tr.committed td:first-child { box-shadow: inset 4px 0 0 var(--good); }
 #prospect-table input[type="checkbox"] { width: 1.1rem; height: 1.1rem; padding: 0; accent-color: var(--good); }
+
+/* Depth chart */
+table.depth td { vertical-align: top; }
+table.depth td.leaving { background: var(--user-bg); }
+.fit-score { display: inline-block; margin-left: 0.35rem; padding: 0 0.35rem; border: 1px solid var(--line); border-radius: 2px; font-weight: 600; font-size: 0.85rem; }

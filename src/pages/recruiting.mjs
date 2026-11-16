@@ -3,13 +3,14 @@ import {
   classRankings, classRankingsLabel, prospects, userTeams, rosterNeeds, positionGroup, POSITION_TARGETS, activeSeason,
 } from '../model.mjs';
 import { SCHEMES, ROLES, rolesFor } from '../schemes.mjs';
+import { DEFAULT_TEAM } from '../config.mjs';
 import { FLAGS, RULES, flagsFor } from '../flags.mjs';
 
 export const PAGE_SIZE = 100;
 
 // The site owner's team. Team needs open on this team; a viewer can switch,
 // and the choice is remembered in that viewer's browser.
-export const DEFAULT_TEAM = 'Texas';
+export { DEFAULT_TEAM };
 
 export function height(inches) {
   if (!inches) return DASH;

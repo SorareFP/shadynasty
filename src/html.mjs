@@ -1,6 +1,7 @@
 // Shared HTML helpers: escaping, page shell, navigation.
 
 import { userTeams, activeSeason } from './model.mjs';
+import { DEFAULT_TEAM } from './config.mjs';
 
 export const DASH = '—';
 
@@ -19,13 +20,17 @@ export function slug(name) {
 }
 
 export const teamFile = (team) => `team-${slug(team.name)}.html`;
+export const depthFile = (team) => `depth-${slug(team.name)}.html`;
 
 export function navItems(archive) {
   const season = activeSeason(archive);
+  const teams = userTeams(season);
+  const mine = teams.find((t) => t.name === DEFAULT_TEAM) ?? teams[0];
   return [
     { key: 'home', label: 'Home', href: 'index.html' },
     ...userTeams(season).map((t) => ({ key: `team-${t.teamId}`, label: t.name, href: teamFile(t) })),
     { key: 'h2h', label: 'Head-to-head', href: 'head-to-head.html' },
+    ...(mine ? [{ key: 'depth', label: 'Depth chart', href: depthFile(mine) }] : []),
     { key: 'recruiting', label: 'Recruiting', href: 'recruiting.html' },
     { key: 'history', label: 'History', href: 'history.html' },
   ];

@@ -95,7 +95,7 @@ test('sparse season still builds and shows dashes', async () => {
   const { pages } = await buildFrom(dir);
   assert.ok(pages['index.html'].includes('—'));
   assert.ok(pages['team-texas.html'].includes('—') || pages['team-texas.html'].includes('No '));
-  assert.equal(Object.keys(pages).length, 6);
+  assert.equal(Object.keys(pages).length, 8);
 });
 
 test('an empty archive builds a placeholder site', async () => {

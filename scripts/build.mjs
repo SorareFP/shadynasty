@@ -5,7 +5,8 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadArchive } from '../src/archive.mjs';
 import { userTeams, activeSeason } from '../src/model.mjs';
-import { teamFile } from '../src/html.mjs';
+import { teamFile, depthFile } from '../src/html.mjs';
+import * as depth from '../src/pages/depth.mjs';
 import * as home from '../src/pages/home.mjs';
 import * as team from '../src/pages/team.mjs';
 import * as h2h from '../src/pages/h2h.mjs';
@@ -25,7 +26,10 @@ export async function build({ dataDir, outDir }) {
     'history.html': history.render(archive),
     'prospects.json': JSON.stringify(recruiting.prospectRows(season)),
   };
-  for (const t of userTeams(season)) files[teamFile(t)] = team.render(archive, t.teamId);
+  for (const t of userTeams(season)) {
+    files[teamFile(t)] = team.render(archive, t.teamId);
+    files[depthFile(t)] = depth.render(archive, t.teamId);
+  }
 
   await rm(outDir, { recursive: true, force: true });
   await mkdir(outDir, { recursive: true });
