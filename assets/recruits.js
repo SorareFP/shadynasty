@@ -33,7 +33,7 @@
   var more = document.getElementById('prospect-more');
   var form = document.getElementById('prospect-filters');
   var f = {};
-  ['group', 'position', 'stars', 'state', 'pipeline', 'archetype', 'role', 'name', 'watch', 'mypipe'].forEach(function (k) {
+  ['group', 'position', 'stars', 'state', 'pipeline', 'archetype', 'role', 'flag', 'name', 'watch', 'mypipe'].forEach(function (k) {
     f[k] = document.getElementById('f-' + k);
   });
   var all = [];
@@ -50,6 +50,12 @@
     Array.prototype.forEach.call(group.querySelectorAll('option'), function (o) {
       if (o.value.indexOf('scheme:') !== 0) roleLabel[o.value] = prefix ? prefix + (o.getAttribute('data-short') || o.textContent) : 'S-tier';
     });
+  });
+
+  // Labels for the Notes column, read from the notes filter's options.
+  var flagLabel = {};
+  Array.prototype.forEach.call(f.flag.options, function (o) {
+    if (o.value) flagLabel[o.value] = o.textContent;
   });
 
   function load(key, fallback) {
@@ -121,6 +127,7 @@
       if (f.pipeline.value && r.pipeline !== f.pipeline.value) return false;
       if (f.archetype.value && r.archetype !== f.archetype.value) return false;
       if (!fitsRole(r, f.role.value)) return false;
+      if (f.flag.value && (r.flags || []).indexOf(f.flag.value) === -1) return false;
       if (stars === 5 ? r.stars !== 5 : r.stars < stars) return false;
       if (name && r.name.toLowerCase().indexOf(name) === -1) return false;
       if (f.watch.checked && !watch.has(r.key)) return false;
@@ -169,6 +176,8 @@
       });
       var fit = cell(tr, labels.join(', ') || ' ');
       fit.className = 'wrap-cell';
+      var notes = cell(tr, (r.flags || []).map(function (k) { return flagLabel[k]; }).filter(Boolean).join(', ') || ' ');
+      notes.className = 'wrap-cell';
       frag.appendChild(tr);
     });
     tbody.replaceChildren(frag);
@@ -221,7 +230,7 @@
     .then(function (res) { return res.json(); })
     .then(function (data) {
       all = data;
-      ['group', 'position', 'stars', 'state', 'pipeline', 'archetype', 'role', 'watch', 'mypipe'].forEach(function (k) {
+      ['group', 'position', 'stars', 'state', 'pipeline', 'archetype', 'role', 'flag', 'watch', 'mypipe'].forEach(function (k) {
         f[k].addEventListener('change', reset);
       });
       f.name.addEventListener('input', reset);

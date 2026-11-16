@@ -3,6 +3,7 @@ import {
   classRankings, classRankingsLabel, prospects, userTeams, rosterNeeds, positionGroup, POSITION_TARGETS, activeSeason,
 } from '../model.mjs';
 import { SCHEMES, ROLES, rolesFor } from '../schemes.mjs';
+import { FLAGS, RULES, flagsFor } from '../flags.mjs';
 
 export const PAGE_SIZE = 100;
 
@@ -37,6 +38,7 @@ export function prospectRows(season) {
     state: r.state ?? '',
     pipeline: r.pipeline ?? '',
     roles: rolesFor(r),
+    flags: flagsFor(r),
   }));
 }
 
@@ -103,6 +105,21 @@ export function fitLabels(roles) {
   return labels.length ? esc(labels.join(', ')) : '';
 }
 
+const FLAG_BY_KEY = Object.fromEntries(FLAGS.map((fl) => [fl.key, fl]));
+
+export function flagLabels(flags) {
+  const labels = (flags ?? []).map((k) => FLAG_BY_KEY[k]?.label).filter(Boolean);
+  return labels.length ? esc(labels.join(', ')) : '';
+}
+
+function rulesSection() {
+  return RULES.map((rule, i) => `<details${i === 0 ? ' open' : ''}>
+  <summary>${esc(rule.title)}</summary>
+  <ul class="rules">${rule.points.map((p) => `<li>${esc(p)}</li>`).join('')}</ul>
+  <p class="muted small source">Based on <a href="${rule.source.url}">${esc(rule.source.label)}</a>.</p>
+</details>`).join('');
+}
+
 function schemeSection() {
   return SCHEMES.map((sc, i) => `<details${i === 0 ? ' open' : ''}>
   <summary>${esc(sc.label)}</summary>
@@ -135,7 +152,7 @@ function prospectSection(rows) {
   const first = rows.slice(0, PAGE_SIZE).map((r) => `<tr>
   <td></td><td class="n">${esc(r.rank)}</td><td>${esc(r.name)}</td><td>${stars(r.stars)}</td><td>${esc(r.position)}</td>
   <td class="n">${esc(r.positionRank)}</td><td>${esc(r.archetype)}</td><td class="n">${height(r.height)}</td><td class="n">${esc(r.weight)}</td>
-  <td>${esc(r.hometown)}, ${esc(r.state)}</td><td class="n">${esc(r.stateRank)}</td><td>${esc(r.pipeline)}</td><td>${fitLabels(r.roles)}</td></tr>`).join('');
+  <td>${esc(r.hometown)}, ${esc(r.state)}</td><td class="n">${esc(r.stateRank)}</td><td>${esc(r.pipeline)}</td><td>${fitLabels(r.roles)}</td><td>${flagLabels(r.flags)}</td></tr>`).join('');
   const th = (label, sort, numeric) => `<th${numeric ? ' class="n"' : ''}><button type="button" class="sort" data-sort="${sort}">${label}</button></th>`;
   return `<form class="filters" id="prospect-filters">
   <label>Group <select id="f-group"><option value="">All</option>${groups.map((g) => opt(g.group, g.label)).join('')}${hasAth ? opt('ATH', 'Athlete') : ''}</select></label>
@@ -145,6 +162,7 @@ function prospectSection(rows) {
   <label>Pipeline <select id="f-pipeline"><option value="">All</option>${uniq('pipeline').map((v) => opt(v)).join('')}</select></label>
   <label>Archetype <select id="f-archetype"><option value="">All</option>${uniq('archetype').map((v) => opt(v)).join('')}</select></label>
   <label>Scheme fit <select id="f-role"><option value="">Any</option>${SCHEMES.map((sc) => `<optgroup label="${esc(sc.label)}"><option value="scheme:${sc.key}">Any ${esc(sc.label)} role</option>${sc.roles.map((ro) => `<option value="${esc(ro.key)}" data-short="${esc(ro.short)}">${esc(ro.label)}</option>`).join('')}</optgroup>`).join('')}</select></label>
+  <label>Notes <select id="f-flag"><option value="">Any</option>${FLAGS.map((fl) => `<option value="${esc(fl.key)}" title="${esc(fl.detail)}">${esc(fl.label)}</option>`).join('')}</select></label>
   <label>Name <input id="f-name" type="search" placeholder="Search" autocomplete="off"></label>
   <label class="check"><input id="f-watch" type="checkbox"> Watchlist only</label>
   <label class="check"><input id="f-mypipe" type="checkbox"> My pipelines only</label>
@@ -152,9 +170,13 @@ function prospectSection(rows) {
 </form>
 <p class="muted small" id="prospect-count">Showing the top ${Math.min(PAGE_SIZE, rows.length)} of ${rows.length} prospects</p>
 ${pipelineEditor(rows)}
+<details class="legend">
+  <summary>What the notes mean</summary>
+  <dl class="pairs pad">${FLAGS.map((fl) => `<dt>${esc(fl.label)}</dt><dd>${esc(fl.detail)}</dd>`).join('')}</dl>
+</details>
 <p class="muted small">Star a prospect to add him to your watchlist. It is saved in this browser only, so each coach keeps his own.</p>
 ${scroll(`<table id="prospect-table">
-<thead><tr><th><span class="sr">Watch</span></th>${th('Rank', 'rank', true)}<th>Name</th><th>Stars</th><th>Pos</th>${th('Pos rank', 'positionRank', true)}<th>Archetype</th>${th('Ht', 'height', true)}${th('Wt', 'weight', true)}<th>Hometown</th>${th('State rank', 'stateRank', true)}${th('Pipeline', 'pipeTier', false)}<th>Fit</th></tr></thead>
+<thead><tr><th><span class="sr">Watch</span></th>${th('Rank', 'rank', true)}<th>Name</th><th>Stars</th><th>Pos</th>${th('Pos rank', 'positionRank', true)}<th>Archetype</th>${th('Ht', 'height', true)}${th('Wt', 'weight', true)}<th>Hometown</th>${th('State rank', 'stateRank', true)}${th('Pipeline', 'pipeTier', false)}<th>Fit</th><th>Notes</th></tr></thead>
 <tbody>${first}</tbody></table>`)}
 <button type="button" id="prospect-more" hidden>Show more</button>`;
 }
@@ -173,6 +195,11 @@ export function render(archive) {
   <h2>Scheme targets</h2>
   <p class="muted small">Which archetypes to chase for each system. "Prospects" filters the board to players who fit that role by position, archetype and size. Ratings and dev traits stay hidden until you scout in the game.</p>
   ${schemeSection()}
+</section>
+<section>
+  <h2>Recruiting rules of thumb</h2>
+  <p class="muted small">Findings from Dominate CFB Dynasty's testing, in short. The odds are theirs.</p>
+  ${rulesSection()}
 </section>
 <section>
   <h2>Class rankings <span class="muted small">${label ? esc(label) : ''}</span></h2>
