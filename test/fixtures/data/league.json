@@ -1,0 +1,44 @@
+{
+ "id": "cfb27-738435",
+ "name": "Shadynasty 2.1",
+ "url": "https://dynastyrewired.com/leagues/cfb27-738435",
+ "role": "owner",
+ "visibility": "public",
+ "trackingState": "active",
+ "currentSeason": 2037,
+ "lastCaptureAt": null,
+ "access": "trial",
+ "seasons": [
+  2037,
+  2036,
+  2035,
+  2034,
+  2033,
+  2032,
+  2031,
+  2030,
+  2029,
+  2028,
+  2027,
+  2026
+ ],
+ "stage": {
+  "key": "[\"hub\",2037,11,1,3,4]",
+  "label": "Week 3",
+  "year": 2037,
+  "phase": "season",
+  "week": 3
+ },
+ "stageState": "stable",
+ "stageObservedAt": 1794839551268,
+ "datasets": [
+  "schedule",
+  "rankings",
+  "postseason",
+  "recruiting",
+  "coaches",
+  "awards",
+  "box-scores",
+  "rosters"
+ ]
+}
