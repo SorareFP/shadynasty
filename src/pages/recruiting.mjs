@@ -151,7 +151,7 @@ function prospectSection(rows) {
   <td></td><td></td><td class="n">${esc(r.rank)}</td><td>${esc(r.name)}</td><td class="n">${stars(r.stars)}</td><td>${esc(r.position)}</td>
   <td class="n">${esc(r.positionRank)}</td><td>${esc(r.archetype)}</td><td class="n">${height(r.height)}</td><td class="n">${esc(r.weight)}</td>
   <td>${esc(r.hometown)}, ${esc(r.state)}</td><td class="n">${esc(r.stateRank)}</td><td>${esc(r.pipeline)}</td><td>${fitLabels(r.roles)}</td><td>${flagLabels(r.flags)}</td></tr>`).join('');
-  const th = (label, sort, numeric) => `<th${numeric ? ' class="n"' : ''}><button type="button" class="sort" data-sort="${sort}">${label}</button></th>`;
+  const th = (label, sort, numeric, hint) => `<th${numeric ? ' class="n"' : ''}><button type="button" class="sort" data-sort="${sort}" title="${hint ?? `Sort by ${label.toLowerCase()}`}">${label}</button></th>`;
   return `<form class="filters" id="prospect-filters">
   <label>Group <select id="f-group"><option value="">All</option>${groups.map((g) => opt(g.group, g.label)).join('')}${hasAth ? opt('ATH', 'Athlete') : ''}</select></label>
   <label>Position <select id="f-position"><option value="">All</option>${uniq('position').map((v) => opt(v)).join('')}</select></label>
@@ -174,10 +174,10 @@ ${pipelineEditor(rows)}
   <summary>What the notes mean</summary>
   <dl class="pairs pad">${FLAGS.map((fl) => `<dt>${esc(fl.label)}</dt><dd>${esc(fl.detail)}</dd>`).join('')}</dl>
 </details>
-<p class="muted small">Star a prospect to add him to your watchlist, press − to take him off your board, and tick Commit when he commits to you. All three are saved in this browser only, so each coach keeps his own. Tick "Show removed" to see the players you took off and put any of them back.</p>
+<p class="muted small">Star a prospect to add him to your watchlist, press − to take him off your board, and tick Commit when he commits to you. All three are saved in this browser only, so each coach keeps his own. Tick "Show removed" to see the players you took off and put any of them back. Click any column heading to sort what is showing by it; click again to reverse.</p>
 <p><button type="button" id="restore-all" hidden>Put all removed players back</button></p>
 ${scroll(`<table id="prospect-table">
-<thead><tr><th><span class="sr">Watch and remove</span></th><th>Commit</th>${th('Rank', 'rank', true)}<th>Name</th><th class="n">Stars</th><th>Pos</th>${th('Pos rank', 'positionRank', true)}<th>Archetype</th>${th('Ht', 'height', true)}${th('Wt', 'weight', true)}<th>Hometown</th>${th('State rank', 'stateRank', true)}${th('Pipeline', 'pipeTier', false)}<th>Fit</th><th>Notes</th></tr></thead>
+<thead><tr>${th('★', 'watch', false, 'Sort by watchlist')}${th('Commit', 'commit')}${th('Rank', 'rank', true)}${th('Name', 'name')}${th('Stars', 'stars', true)}${th('Pos', 'position')}${th('Pos rank', 'positionRank', true)}${th('Archetype', 'archetype')}${th('Ht', 'height', true)}${th('Wt', 'weight', true)}${th('Hometown', 'hometown')}${th('State rank', 'stateRank', true)}${th('Pipeline', 'pipeTier')}${th('Fit', 'fit')}${th('Notes', 'notes')}</tr></thead>
 <tbody>${first}</tbody></table>`)}
 <button type="button" id="prospect-more" hidden>Show more</button>`;
 }

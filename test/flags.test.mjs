@@ -50,7 +50,7 @@ test('recruiting page carries notes, the notes filter and the rules', async () =
   const outDir = await mkdtemp(join(tmpdir(), 'site-'));
   await build({ dataDir: fileURLToPath(new URL('./fixtures/data/', import.meta.url)), outDir });
   const html = await readFile(join(outDir, 'recruiting.html'), 'utf8');
-  for (const s of ['id="f-flag"', 'Recruiting rules of thumb', 'Fake and hidden five-stars', '<th>Notes</th>', 'Scarce spot']) {
+  for (const s of ['id="f-flag"', 'Recruiting rules of thumb', 'Fake and hidden five-stars', 'data-sort="notes"', 'Scarce spot']) {
     assert.ok(html.includes(s), `recruiting lacks ${s}`);
   }
   const rows = JSON.parse(await readFile(join(outDir, 'prospects.json'), 'utf8'));

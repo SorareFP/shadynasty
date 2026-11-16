@@ -165,6 +165,32 @@
     });
   }
 
+  function fitText(r) {
+    var labels = [];
+    (r.roles || []).forEach(function (k) {
+      if (roleLabel[k] && labels.indexOf(roleLabel[k]) === -1) labels.push(roleLabel[k]);
+    });
+    return labels.join(', ');
+  }
+
+  function notesText(r) {
+    return (r.flags || []).map(function (k) { return flagLabel[k]; }).filter(Boolean).join(', ');
+  }
+
+  // What a row is sorted on for the current column. Lower sorts first.
+  function sortValue(r) {
+    switch (sortKey) {
+      case 'watch': return watch.has(r.key) ? 0 : 1;
+      case 'commit': return commits.has(r.key) ? 0 : 1;
+      case 'stars': return -(r.stars || 0);
+      case 'pipeTier': return (9 - tierOf(r)) + ' ' + (r.pipeline || '~');
+      case 'hometown': return r.state || r.hometown ? (r.state || '~') + ' ' + (r.hometown || '') : '';
+      case 'fit': return fitText(r);
+      case 'notes': return notesText(r);
+      default: return r[sortKey];
+    }
+  }
+
   function fitsRole(r, value) {
     if (!value) return true;
     var roles = r.roles || [];
@@ -195,12 +221,15 @@
       if (f.removed.checked !== removed.has(r.key)) return false;
       return true;
     });
+    // Sorts whatever the filters left. Blanks always go last; ties fall back to national rank.
     rows.sort(function (a, b) {
-      var x = sortKey === 'pipeTier' ? -tierOf(a) : a[sortKey];
-      var y = sortKey === 'pipeTier' ? -tierOf(b) : b[sortKey];
-      if (x === null || x === undefined) return 1;
-      if (y === null || y === undefined) return -1;
-      return x === y ? (a.rank || 0) - (b.rank || 0) : (x - y) * sortDir;
+      var x = sortValue(a);
+      var y = sortValue(b);
+      var xBlank = x === null || x === undefined || x === '';
+      var yBlank = y === null || y === undefined || y === '';
+      if (xBlank || yBlank) return xBlank && yBlank ? (a.rank || 0) - (b.rank || 0) : xBlank ? 1 : -1;
+      var d = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y));
+      return d === 0 ? (a.rank || 0) - (b.rank || 0) : d * sortDir;
     });
     return rows;
   }
@@ -233,13 +262,9 @@
         pipe.appendChild(document.createTextNode(' '));
         pipe.appendChild(badge);
       }
-      var labels = [];
-      (r.roles || []).forEach(function (k) {
-        if (roleLabel[k] && labels.indexOf(roleLabel[k]) === -1) labels.push(roleLabel[k]);
-      });
-      var fit = cell(tr, labels.join(', ') || ' ');
+      var fit = cell(tr, fitText(r) || ' ');
       fit.className = 'tags';
-      var notes = cell(tr, (r.flags || []).map(function (k) { return flagLabel[k]; }).filter(Boolean).join(', ') || ' ');
+      var notes = cell(tr, notesText(r) || ' ');
       notes.className = 'tags';
       frag.appendChild(tr);
     });
