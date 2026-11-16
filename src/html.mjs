@@ -1,6 +1,6 @@
 // Shared HTML helpers: escaping, page shell, navigation.
 
-import { userTeams } from './model.mjs';
+import { userTeams, activeSeason } from './model.mjs';
 
 export const DASH = '—';
 
@@ -21,7 +21,7 @@ export function slug(name) {
 export const teamFile = (team) => `team-${slug(team.name)}.html`;
 
 export function navItems(archive) {
-  const season = archive.seasons?.[archive.current];
+  const season = activeSeason(archive);
   return [
     { key: 'home', label: 'Home', href: 'index.html' },
     ...userTeams(season).map((t) => ({ key: `team-${t.teamId}`, label: t.name, href: teamFile(t) })),
@@ -37,8 +37,10 @@ export function formatDate(ms) {
 }
 
 export function num(value, digits = 0) {
-  if (value === null || value === undefined || Number.isNaN(value)) return DASH;
-  return Number.isInteger(value) ? String(value) : value.toFixed(digits || 1);
+  if (value === null || value === undefined || value === '') return DASH;
+  const n = Number(value);
+  if (!Number.isFinite(n)) return DASH;
+  return Number.isInteger(n) ? String(n) : n.toFixed(digits || 1);
 }
 
 // Wraps a table so wide content scrolls inside it instead of the page.

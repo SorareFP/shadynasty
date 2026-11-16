@@ -4,7 +4,7 @@ import { mkdir, writeFile, copyFile, rm } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadArchive } from '../src/archive.mjs';
-import { userTeams } from '../src/model.mjs';
+import { userTeams, activeSeason } from '../src/model.mjs';
 import { teamFile } from '../src/html.mjs';
 import * as home from '../src/pages/home.mjs';
 import * as team from '../src/pages/team.mjs';
@@ -16,7 +16,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 export async function build({ dataDir, outDir }) {
   const archive = await loadArchive(dataDir);
-  const season = archive.seasons?.[archive.current];
+  const season = activeSeason(archive);
 
   const files = {
     'index.html': home.render(archive),

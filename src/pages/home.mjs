@@ -1,5 +1,5 @@
 import { esc, layout, scroll, teamFile, DASH } from '../html.mjs';
-import { userTeams, teamSummary, top25 } from '../model.mjs';
+import { userTeams, teamSummary, top25, activeSeason } from '../model.mjs';
 
 export function gameLine(g) {
   if (!g) return DASH;
@@ -44,7 +44,7 @@ function pollTable(poll) {
 }
 
 export function render(archive) {
-  const season = archive.seasons?.[archive.current];
+  const season = activeSeason(archive);
   if (!season?.schedule) {
     return layout({
       archive, active: 'home', title: 'Home',

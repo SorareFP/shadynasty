@@ -1,6 +1,6 @@
 import { esc, layout, scroll, num, DASH } from '../html.mjs';
 import {
-  classRankings, classRankingsLabel, prospects, userTeams, rosterNeeds, positionGroup, POSITION_TARGETS,
+  classRankings, classRankingsLabel, prospects, userTeams, rosterNeeds, positionGroup, POSITION_TARGETS, activeSeason,
 } from '../model.mjs';
 import { SCHEMES, ROLES, rolesFor } from '../schemes.mjs';
 
@@ -153,7 +153,7 @@ ${scroll(`<table id="prospect-table">
 }
 
 export function render(archive) {
-  const season = archive.seasons?.[archive.current];
+  const season = activeSeason(archive);
   const label = classRankingsLabel(season);
   const body = `<h1>Recruiting</h1>
 <p class="note">The game shares class rankings and the prospect pool, but not ratings or dev traits for unsigned prospects, each coach's board, or where a prospect has committed.</p>

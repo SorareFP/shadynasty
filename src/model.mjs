@@ -110,13 +110,30 @@ function seasonList(archive) {
 export function champions(archive) {
   const byYear = new Map();
   for (const s of seasonList(archive)) {
-    for (const c of s.postseason?.championships ?? []) byYear.set(c.year, c);
+    for (const c of s.postseason?.championships ?? []) {
+      // A later copy that lost its coach must not erase the one already known.
+      const known = byYear.get(c.year);
+      byYear.set(c.year, known?.coach && !c.coach ? { ...c, coach: known.coach } : c);
+    }
   }
   return [...byYear.values()].sort((a, b) => b.year - a.year);
 }
 
+// The season the pages should show: the current one, or the most recent
+// season that has teams when a new season has started but is still empty.
+export function activeSeason(archive) {
+  const seasons = seasonList(archive).reverse();
+  const current = archive?.seasons?.[archive?.current] ?? null;
+  if (current?.schedule?.teams?.length) return current;
+  return seasons.find((s) => s.year <= (archive?.current ?? Infinity) && s.schedule?.teams?.length) ?? current;
+}
+
+function headCoachOf(season, teamId) {
+  return (season?.coaches?.active ?? []).find((c) => c.role === 'HC' && c.teamId === teamId)?.name ?? null;
+}
+
 export function headToHead(archive) {
-  const current = archive?.seasons?.[archive.current];
+  const current = seasonList(archive).reverse().find((s) => s.coaches?.active?.length) ?? null;
   const titles = {};
   for (const c of champions(archive)) if (c.coach) titles[c.coach] = (titles[c.coach] ?? 0) + 1;
 
@@ -132,6 +149,7 @@ export function headToHead(archive) {
       playoffWins: c.playoffWins ?? null,
       playoffLosses: c.playoffLosses ?? null,
       titles: titles[c.name] ?? 0,
+      seriesWins: 0,
     }));
 
   const meetings = [];
@@ -147,9 +165,16 @@ export function headToHead(archive) {
           homeName: g.homeName,
           homeScore: g.homeScore,
           winner: g.awayScore > g.homeScore ? g.awayName : g.homeScore > g.awayScore ? g.homeName : null,
+          // Coaches change schools, so the win is credited to whoever coached the winner that season.
+          winnerCoach: g.awayScore === g.homeScore ? null
+            : headCoachOf(s, g.awayScore > g.homeScore ? g.awayTeamId : g.homeTeamId),
         });
       }
     }
+  }
+  for (const m of meetings) {
+    const coach = coaches.find((c) => c.name === m.winnerCoach);
+    if (coach) coach.seriesWins += 1;
   }
   return { coaches, meetings };
 }

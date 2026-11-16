@@ -1,5 +1,5 @@
 import { esc, layout, scroll, num, DASH } from '../html.mjs';
-import { teamSummary, seasonLeaders } from '../model.mjs';
+import { teamSummary, seasonLeaders, activeSeason } from '../model.mjs';
 import { LEADER_CATEGORIES, DEV_TRAITS } from '../statcodes.mjs';
 
 function scheduleTable(games) {
@@ -37,7 +37,7 @@ function rosterTable(roster) {
 }
 
 export function render(archive, teamId) {
-  const season = archive.seasons?.[archive.current];
+  const season = activeSeason(archive);
   const s = teamSummary(season, teamId);
   const team = s.team ?? { name: 'Team' };
   const body = `<header class="page-head">
