@@ -207,7 +207,7 @@ export function recordBook(archive) {
             if (value > 0 && value > (singleGame[c.key]?.value ?? 0)) {
               singleGame[c.key] = {
                 name: p.name, position: p.position, team: team.name, season: s.year, value,
-                opponent: isHome ? meta.awayName : meta.homeName,
+                opponent: isHome ? meta.awayName : meta.homeName, isHome,
               };
             }
           }
