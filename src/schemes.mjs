@@ -24,13 +24,14 @@ export const SCHEMES = [
   {
     key: 'raid',
     label: 'Air Raid offense',
+    note: 'The Air Raid lines up four receivers and names each spot with a letter. X is the outside receiver on the left. Z is the outside receiver on the right. Y is the inside receiver next to Z, and H is the inside receiver next to X. F is the running back.',
     source: { label: 'Coach TWILL, "The Ultimate Air Raid Recruiting Guide"', url: 'https://www.youtube.com/watch?v=PckbWSx28mM' },
     roles: [
       { key: 'raid-qb', label: 'Quarterback', short: 'QB', want: 'Pocket Passer.', test: (r) => pos(r, 'QB') && arch(r, 'Pocket Passer') },
-      { key: 'raid-f', label: 'F (running back)', short: 'F', want: 'Backfield Threat; East/West Playmaker as the fallback.', test: (r) => pos(r, 'HB', 'ATH') && arch(r, 'Backfield Threat', 'East/West Playmaker') },
-      { key: 'raid-x', label: 'X receiver (deep threat)', short: 'X', want: 'Speedster, ideally 95+ speed once scouted.', test: (r) => pos(r, 'WR') && arch(r, 'Speedster') },
-      { key: 'raid-zy', label: 'Z and Y receivers', short: 'Z/Y', want: "Physical Route Runner, 6'3\" or taller. Your best receiver plays Y.", test: (r) => pos(r, 'WR', 'ATH') && arch(r, 'Physical Route Runner') && r.height >= 75 },
-      { key: 'raid-h', label: 'H receiver (slot)', short: 'H', want: 'Route Artist.', test: (r) => pos(r, 'WR') && arch(r, 'Route Artist') },
+      { key: 'raid-f', label: 'Running back (F)', short: 'RB', want: 'Backfield Threat; East/West Playmaker as the fallback.', test: (r) => pos(r, 'HB', 'ATH') && arch(r, 'Backfield Threat', 'East/West Playmaker') },
+      { key: 'raid-x', label: 'Outside receiver, left: the deep threat (X)', short: 'Deep WR', want: 'Speedster, ideally 95+ speed once scouted.', test: (r) => pos(r, 'WR') && arch(r, 'Speedster') },
+      { key: 'raid-zy', label: 'Outside receiver, right (Z) and inside receiver beside him (Y)', short: 'Big WR', want: "Physical Route Runner, 6'3\" or taller. Put your best receiver inside, at Y.", test: (r) => pos(r, 'WR', 'ATH') && arch(r, 'Physical Route Runner') && r.height >= 75 },
+      { key: 'raid-h', label: 'Inside receiver on the left: the quick slot (H)', short: 'Slot WR', want: 'Route Artist.', test: (r) => pos(r, 'WR') && arch(r, 'Route Artist') },
       { key: 'raid-t', label: 'Tackle', short: 'OT', want: 'Pass Protector at both tackles.', test: (r) => pos(r, 'LT', 'RT') && arch(r, 'Pass Protector') },
       { key: 'raid-g', label: 'Guard', short: 'OG', want: 'Well Rounded; Pass Protector as the fallback.', test: (r) => pos(r, 'LG', 'RG') && arch(r, 'Well Rounded') },
       { key: 'raid-c', label: 'Center', short: 'C', want: 'Raw Strength; a Raw Strength guard or tackle can move to center.', test: (r) => arch(r, 'Raw Strength') && pos(r, 'C', 'LG', 'RG') },

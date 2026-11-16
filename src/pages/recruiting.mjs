@@ -55,10 +55,16 @@ function needsTable(team, rows) {
   <td class="n">${esc(r.returning)}${r.target ? ` <span class="muted">/ ${esc(r.target)}</span>` : ''}</td>
   <td class="n">${esc(r.bestReturning)}</td>
   <td><span class="need need-${r.need}">${NEED_LABEL[r.need]}</span></td>
+  <td>${r.portalSpots ? `<span class="need need-portal">Save ${esc(r.portalSpots)}</span>` : ''}</td>
   <td><button type="button" class="link" data-group="${esc(r.group)}">Prospects</button></td></tr>`;
   }).join('');
-  return scroll(`<table>
-<thead><tr><th>Position</th><th class="n">Now</th><th>Leaving</th><th class="n">Back</th><th class="n">Best back</th><th>Need</th><th></th></tr></thead>
+  const portal = rows.filter((r) => r.portalSpots);
+  const total = portal.reduce((n, r) => n + r.portalSpots, 0);
+  const advice = portal.length
+    ? `<p class="note"><strong>Save ${total} spot${total === 1 ? '' : 's'} for the transfer portal:</strong> ${portal.map((r) => `${esc(r.portalSpots)} at ${esc(r.label.toLowerCase())} (${esc(r.topLeaving)} starter-level senior${r.topLeaving === 1 ? '' : 's'} leaving, ${esc(r.readyReturning)} of ${esc(r.starters)} starting spot${r.starters === 1 ? '' : 's'} covered)`).join('; ')}. A high school signee is unlikely to start there next season.</p>`
+    : '';
+  return advice + scroll(`<table>
+<thead><tr><th>Position</th><th class="n">Now</th><th>Leaving</th><th class="n">Back</th><th class="n">Best back</th><th>Need</th><th>Portal</th><th></th></tr></thead>
 <tbody>${body}</tbody></table>`);
 }
 
@@ -104,6 +110,7 @@ function schemeSection() {
 <thead><tr><th>Role</th><th>Who to target</th><th></th></tr></thead>
 <tbody>${sc.roles.map((ro) => `<tr><td>${esc(ro.label)}</td><td class="wrap-cell">${esc(ro.want)}</td>
   <td><button type="button" class="link" data-role="${esc(ro.key)}">Prospects</button></td></tr>`).join('')}</tbody></table>`)}
+  ${sc.note ? `<p class="muted small pad">${esc(sc.note)}</p>` : ''}
   <p class="muted small source">Based on <a href="${sc.source.url}">${esc(sc.source.label)}</a>.</p>
 </details>`).join('');
 }
@@ -137,7 +144,7 @@ function prospectSection(rows) {
   <label>State <select id="f-state"><option value="">All</option>${uniq('state').map((v) => opt(v)).join('')}</select></label>
   <label>Pipeline <select id="f-pipeline"><option value="">All</option>${uniq('pipeline').map((v) => opt(v)).join('')}</select></label>
   <label>Archetype <select id="f-archetype"><option value="">All</option>${uniq('archetype').map((v) => opt(v)).join('')}</select></label>
-  <label>Scheme fit <select id="f-role"><option value="">Any</option>${SCHEMES.map((sc) => `<optgroup label="${esc(sc.label)}"><option value="scheme:${sc.key}">Any ${esc(sc.label)} role</option>${sc.roles.map((ro) => opt(ro.key, ro.label)).join('')}</optgroup>`).join('')}</select></label>
+  <label>Scheme fit <select id="f-role"><option value="">Any</option>${SCHEMES.map((sc) => `<optgroup label="${esc(sc.label)}"><option value="scheme:${sc.key}">Any ${esc(sc.label)} role</option>${sc.roles.map((ro) => `<option value="${esc(ro.key)}" data-short="${esc(ro.short)}">${esc(ro.label)}</option>`).join('')}</optgroup>`).join('')}</select></label>
   <label>Name <input id="f-name" type="search" placeholder="Search" autocomplete="off"></label>
   <label class="check"><input id="f-watch" type="checkbox"> Watchlist only</label>
   <label class="check"><input id="f-mypipe" type="checkbox"> My pipelines only</label>
@@ -159,7 +166,7 @@ export function render(archive) {
 <p class="note">The game shares class rankings and the prospect pool, but not ratings or dev traits for unsigned prospects, each coach's board, or where a prospect has committed.</p>
 <section>
   <h2>Team needs</h2>
-  <p class="muted small">Seniors are counted as leaving; early draft entries and transfers are not predicted. "Back" compares returning players with a typical depth for that position, which is this site's own yardstick.</p>
+  <p class="muted small">Seniors are counted as leaving; early draft entries and transfers are not predicted. "Back" compares returning players with a typical depth for that position, which is this site's own yardstick. A portal spot is suggested where a senior rated 88 or better leaves and no returning player rated 84 or better is there to take the starting job.</p>
   ${needsSection(season)}
 </section>
 <section>

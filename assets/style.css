@@ -59,7 +59,7 @@ body {
   font-variant-numeric: tabular-nums;
 }
 .wrap {
-  max-width: 60rem;
+  max-width: 100rem;
   margin-inline: auto;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
@@ -151,6 +151,7 @@ td.wrap-cell { white-space: normal; min-width: 12rem; }
 .need-high { color: var(--bad); }
 .need-some { color: var(--accent); }
 .need-set { color: var(--good); }
+.need-portal { color: var(--fg); background: var(--user-bg); border-color: var(--accent); }
 button.link { border: 0; background: none; padding: 0; color: var(--accent); text-decoration: underline; font-weight: 500; }
 button.sort { border: 0; background: none; padding: 0; font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit; text-decoration: underline dotted; }
 th[aria-sort="ascending"] button.sort::after { content: " ▲"; }

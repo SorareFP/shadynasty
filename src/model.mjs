@@ -255,17 +255,17 @@ export function recordBook(archive) {
 // Typical depth for an 85-man roster. These targets are this site's own
 // assumption, used only to grade how thin a position group will be.
 export const POSITION_TARGETS = [
-  { group: 'QB', label: 'Quarterback', target: 4 },
-  { group: 'HB', label: 'Running back', target: 5 },
-  { group: 'WR', label: 'Wide receiver', target: 10 },
-  { group: 'TE', label: 'Tight end', target: 4 },
-  { group: 'OL', label: 'Offensive line', target: 15 },
-  { group: 'DL', label: 'Defensive line', target: 12 },
-  { group: 'LB', label: 'Linebacker', target: 9 },
-  { group: 'CB', label: 'Cornerback', target: 8 },
-  { group: 'S', label: 'Safety', target: 6 },
-  { group: 'K', label: 'Kicker', target: 1 },
-  { group: 'P', label: 'Punter', target: 1 },
+  { group: 'QB', label: 'Quarterback', target: 4, starters: 1 },
+  { group: 'HB', label: 'Running back', target: 5, starters: 1 },
+  { group: 'WR', label: 'Wide receiver', target: 10, starters: 3 },
+  { group: 'TE', label: 'Tight end', target: 4, starters: 1 },
+  { group: 'OL', label: 'Offensive line', target: 15, starters: 5 },
+  { group: 'DL', label: 'Defensive line', target: 12, starters: 4 },
+  { group: 'LB', label: 'Linebacker', target: 9, starters: 3 },
+  { group: 'CB', label: 'Cornerback', target: 8, starters: 2 },
+  { group: 'S', label: 'Safety', target: 6, starters: 2 },
+  { group: 'K', label: 'Kicker', target: 1, starters: 1 },
+  { group: 'P', label: 'Punter', target: 1, starters: 1 },
 ];
 
 const GROUP_OF = {
@@ -281,6 +281,11 @@ export function positionGroup(position) {
   return GROUP_OF[position] ?? position ?? '';
 }
 
+// Portal advice. A leaving player at or above HIGH_END is a starter-level loss;
+// a returning player at or above READY can step in. Both are this site's own cut-offs.
+export const HIGH_END = 88;
+export const READY = 84;
+
 const isSenior = (player) => String(player.year ?? '').startsWith('SR');
 
 export function rosterNeeds(season, teamId) {
@@ -295,15 +300,20 @@ export function rosterNeeds(season, teamId) {
   const known = new Set(POSITION_TARGETS.map((t) => t.group));
   const defs = [
     ...POSITION_TARGETS,
-    ...[...byGroup.keys()].filter((g) => !known.has(g)).map((g) => ({ group: g, label: g, target: 0 })),
+    ...[...byGroup.keys()].filter((g) => !known.has(g)).map((g) => ({ group: g, label: g, target: 0, starters: 0 })),
   ];
-  return defs.map(({ group, label, target }) => {
+  return defs.map(({ group, label, target, starters = 0 }) => {
     const all = byGroup.get(group) ?? [];
     const byOverall = (a, b) => (b.overall ?? 0) - (a.overall ?? 0);
     const leavingPlayers = all.filter(isSenior).sort(byOverall)
       .map((p) => ({ name: p.name, year: p.year, overall: p.overall ?? null }));
     const staying = all.filter((p) => !isSenior(p)).sort(byOverall);
     const returning = staying.length;
+    const topLeaving = leavingPlayers.filter((p) => (p.overall ?? 0) >= HIGH_END).length;
+    const readyReturning = staying.filter((p) => (p.overall ?? 0) >= READY).length;
+    // Starting spots nobody on the roster is ready for, capped at the starters being lost:
+    // a high school signee will not fill those next season, a transfer can.
+    const portalSpots = Math.max(0, Math.min(topLeaving, starters - readyReturning));
     return {
       group,
       label,
@@ -314,6 +324,10 @@ export function rosterNeeds(season, teamId) {
       returning,
       bestReturning: staying[0]?.overall ?? null,
       need: returning < target * 0.7 ? 'high' : returning < target ? 'some' : 'set',
+      starters,
+      topLeaving,
+      readyReturning,
+      portalSpots,
     };
   });
 }

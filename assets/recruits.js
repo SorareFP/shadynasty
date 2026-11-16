@@ -48,7 +48,7 @@
   Array.prototype.forEach.call(f.role.querySelectorAll('optgroup'), function (group) {
     var prefix = /Tite/.test(group.label) ? 'Tite ' : /Air Raid/.test(group.label) ? 'Raid ' : '';
     Array.prototype.forEach.call(group.querySelectorAll('option'), function (o) {
-      if (o.value.indexOf('scheme:') !== 0) roleLabel[o.value] = prefix ? prefix + o.textContent : 'S-tier';
+      if (o.value.indexOf('scheme:') !== 0) roleLabel[o.value] = prefix ? prefix + (o.getAttribute('data-short') || o.textContent) : 'S-tier';
     });
   });
 
