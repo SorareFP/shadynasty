@@ -56,7 +56,7 @@ function needsTable(team, rows) {
   <td class="n" data-commits="${esc(r.group)}">0</td>
   <td class="n">${esc(r.returning)}${r.target ? ` <span class="muted">/ ${esc(r.target)}</span>` : ''}</td>
   <td class="n">${esc(r.bestReturning)}</td>
-  <td><span class="need need-${r.need}">${NEED_LABEL[r.need]}</span></td>
+  <td><span class="need need-${r.need}" data-need="${esc(r.group)}" data-returning="${esc(r.returning)}" data-target="${esc(r.target)}">${NEED_LABEL[r.need]}</span></td>
   <td>${r.portalSpots ? `<span class="need need-portal">Save ${esc(r.portalSpots)}</span>` : ''}</td></tr>`;
   }).join('');
   const portal = rows.filter((r) => r.portalSpots);
@@ -207,7 +207,7 @@ export function render(archive) {
 <section>
   <h2>Team needs</h2>
   ${needsSection(season)}
-  <p class="muted small">Click a position to see its prospects. "In" counts the prospects you have ticked as committed on the board. Seniors count as leaving; early draft entries and transfers are not predicted. "Back" is returning players against a typical depth, and "Best" is the top returner's overall; both yardsticks are this site's own. A portal spot is suggested where a senior rated 88 or better leaves and no returner rated 84 or better can take the job.</p>
+  <p class="muted small">Click a position to see its prospects. "In" counts the prospects you have ticked as committed on the board; they count toward the need rating, but not toward the portal spots, which are about next season's starters. Seniors count as leaving; early draft entries and transfers are not predicted. "Back" is returning players against a typical depth, and "Best" is the top returner's overall; both yardsticks are this site's own. A portal spot is suggested where a senior rated 88 or better leaves and no returner rated 84 or better can take the job.</p>
 </section>
 <section>
   <h2>Scheme targets</h2>

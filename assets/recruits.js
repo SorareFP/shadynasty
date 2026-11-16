@@ -153,6 +153,16 @@
     Array.prototype.forEach.call(document.querySelectorAll('td[data-commits]'), function (td) {
       td.textContent = byGroup[td.getAttribute('data-commits')] || 0;
     });
+    // Commits count toward the need rating (returning players plus commits against
+    // the typical depth). Portal spots are left alone: they are about next season's starters.
+    var NEED = { high: 'Thin', some: 'Short', set: 'Covered' };
+    Array.prototype.forEach.call(document.querySelectorAll('span[data-need]'), function (span) {
+      var have = Number(span.getAttribute('data-returning')) + (byGroup[span.getAttribute('data-need')] || 0);
+      var target = Number(span.getAttribute('data-target'));
+      var need = have < target * 0.7 ? 'high' : have < target ? 'some' : 'set';
+      span.className = 'need need-' + need;
+      span.textContent = NEED[need];
+    });
   }
 
   function fitsRole(r, value) {
