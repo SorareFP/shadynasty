@@ -5,7 +5,7 @@ A league site for our EA Sports College Football 27 Online Dynasty: where things
 ## How it works
 
 1. [Dynasty Rewired](https://dynastyrewired.com/) captures the league after each advance.
-2. Once an hour, a GitHub Actions job asks its API whether anything changed. If so, it saves the new data under `data/` and commits it.
+2. A GitHub Actions job pulls the new data from its API, saves it under `data/` and commits it. The job starts within a couple of minutes of each save through the webhook relay (see [relay/README.md](relay/README.md)), and also once an hour as a backup.
 3. The job rebuilds the pages from `data/` and publishes them with GitHub Pages.
 
 `data/` is the archive. The record book and past seasons are built from it, so keep it.

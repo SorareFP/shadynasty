@@ -6,6 +6,9 @@ on:
     # Once a day, refresh everything even if the league looks unchanged.
     - cron: "47 9 * * *"
   workflow_dispatch:
+  # Sent by the relay (relay/worker.mjs) when Dynasty Rewired saves new data.
+  repository_dispatch:
+    types: [dynasty-updated]
   push:
     branches: [main]
 
@@ -37,7 +40,8 @@ jobs:
       - name: Pull league data
         env:
           DR_API_TOKEN: ${{ secrets.DR_API_TOKEN }}
-          FORCE_SYNC: ${{ github.event_name == 'workflow_dispatch' || github.event.schedule == '47 9 * * *' }}
+          # Relay calls always refresh: a roster or recruiting save mid-week doesn't change the league's stage.
+          FORCE_SYNC: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'repository_dispatch' || github.event.schedule == '47 9 * * *' }}
         run: npm run sync
 
       - name: Save new data to the archive
