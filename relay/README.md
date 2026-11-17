@@ -15,7 +15,7 @@ Never paste the token or the secret into chat, an issue or this repo. They go on
 
 ### 1. GitHub token
 
-1. Open GitHub → Settings → Developer settings → Personal access tokens → **Fine-grained tokens** → **Generate new token**.
+1. Open https://github.com/settings/personal-access-tokens/new in a browser (the GitHub phone app doesn't have this page). To get there by hand: your profile picture (top right) → **Settings** → **Developer settings** at the very bottom of the left sidebar → **Personal access tokens** → **Fine-grained tokens** → **Generate new token**.
 2. Name: `shadynasty relay`. Expiration: up to a year (put a reminder in your calendar).
 3. Repository access: **Only select repositories** → `shadynasty`.
 4. Permissions → Repository permissions → **Contents: Read and write**. Leave everything else alone.
